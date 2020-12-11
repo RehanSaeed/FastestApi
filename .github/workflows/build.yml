@@ -92,5 +92,5 @@ jobs:
       run: dotnet cake --target=DockerBuild --tag=${{secrets.DOCKER_USERNAME}}/fastestapi --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
     - name: 'Scan'
-      run: docker scan nginx:latest --accept-license
+      run: docker scan nginx:latest
       shell: pwsh
