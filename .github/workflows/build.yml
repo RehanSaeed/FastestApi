@@ -98,6 +98,8 @@ jobs:
       run: echo ${{env.DOCKER_PASSWORD}} | docker login ${{env.DOCKER_REGISTRY}} --username ${{env.DOCKER_USERNAME}} --password-stdin
       shell: pwsh
     - name: 'Dotnet Cake DockerBuild'
-      run: dotnet cake --target=DockerBuild --tag=${{env.DOCKER_REGISTRY}}/${{env.DOCKER_USERNAME}}/${{env.DOCKER_IMAGE_NAME}} --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
+      env:
+        DOCKER_TAG: ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}
+      run: dotnet cake --target=DockerBuild --tag="${{env.DOCKER_TAG}}".ToLower() --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
 #endif
