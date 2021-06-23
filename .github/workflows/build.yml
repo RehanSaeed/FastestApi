@@ -68,6 +68,8 @@ jobs:
     environment:
       name: 'Docker Hub'
       url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/apitemplate
+    permissions:
+      packages: write
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
