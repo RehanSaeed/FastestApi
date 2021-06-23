@@ -19,6 +19,15 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # Set the build number in MinVer.
   MINVERBUILDMETADATA: build.${{github.run_number}}
+  
+  DOCKER_IMAGE_NAME: fastestapi
+  
+  DOCKER_HUB_USERNAME: ${{secrets.DOCKER_USERNAME}}
+  DOCKER_HUB_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  
+  DOCKER_GITHUB_REGISTRY: ghcr.io
+  DOCKER_GITHUB_USERNAME: ${{ github.actor }}
+  DOCKER_GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -83,23 +92,19 @@ jobs:
       run: echo ${{steps.qemu.outputs.platforms}}
     - name: 'Install Docker BuildX'
       uses: docker/setup-buildx-action@v1
-    - name: 'Docker Login'
+    - name: 'Docker Hub Login'
       if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      env:
-        DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      run: echo $env:DOCKER_PASSWORD | docker login --username "$($env:DOCKER_USERNAME)" --password-stdin
+      run: echo ${{env.DOCKER_HUB_PASSWORD}} | docker login --username ${{env.DOCKER_HUB_USERNAME}} --password-stdin
       shell: pwsh
-    - name: 'Docker Login GitHub'
+    - name: 'GitHub Container Registry Login '
       if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      env:
-        DOCKER_REGISTRY: ghcr.io
-        DOCKER_USERNAME: ${{ github.actor }}
-        DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      run: echo $env:DOCKER_PASSWORD | docker login "$($env:DOCKER_REGISTRY)" --username "$($env:DOCKER_USERNAME)" --password-stdin
+      run: echo ${{env.DOCKER_GITHUB_PASSWORD}} | docker login ${{env.DOCKER_GITHUB_REGISTRY}} --username ${{env.DOCKER_GITHUB_USERNAME}} --password-stdin
       shell: pwsh
     - name: 'Dotnet Cake DockerBuild'
-      run: dotnet cake --target=DockerBuild --tag=${{secrets.DOCKER_USERNAME}}/fastestapi --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
+      env:
+        DOCKER_HUB_TAG: ${{env.DOCKER_HUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}
+        GITHUB_TAG: ghcr.io/${{ env.IMAGE_NAME }}
+      run: dotnet cake --target=DockerBuild --tag="${{env.DOCKER_HUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}" --tag="${{env.DOCKER_GITHUB_REGISTRY}}/${{env.DOCKER_GITHUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}" --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
     #- name: 'Scan'
     #  run: docker scan nginx:latest
