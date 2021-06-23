@@ -19,16 +19,18 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # Set the build number in MinVer.
   MINVERBUILDMETADATA: build.${{github.run_number}}
-
-  DOCKER_IMAGE_NAME: fastestapi
+#if (Docker)
+  DOCKER_IMAGE_NAME: apitemplate
   # GitHub Container Registry
   DOCKER_REGISTRY: ghcr.io
-  DOCKER_USERNAME: ${{ github.actor }}
-  DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  DOCKER_USERNAME: ${{github.actor}}
+  DOCKER_PASSWORD: ${{secrets.GITHUB_TOKEN}}
+  DOCKER_TAG: ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}
   # Docker Hub
   # DOCKER_REGISTRY: registry.hub.docker.com
   # DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
   # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+#endif
 
 jobs:
   build:
@@ -66,8 +68,8 @@ jobs:
   docker:
     name: Docker-${{matrix.os}}
     environment:
-      name: 'Docker Hub'
-      url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/apitemplate
+      name: 'GitHub Container Registry'
+      url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/DOCKER_IMAGE_NAME
     permissions:
       packages: write
     runs-on: ${{matrix.os}}
@@ -75,6 +77,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
+    - run: echo ${{env.DOCKER_TAG}}
+      shell: pwsh
     - name: 'Checkout'
       uses: actions/checkout@v2.3.4
       with:
