@@ -93,9 +93,10 @@ jobs:
     - name: 'Docker Login GitHub'
       if: github.ref == 'refs/heads/main' || github.event_name == 'release'
       env:
-        DOCKER_USERNAME: RehanSaeed
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      run: docker login ghcr.io --username "$($env:DOCKER_USERNAME)"
+        DOCKER_REGISTRY: ghcr.io
+        DOCKER_USERNAME: ${{ github.actor }}
+        DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      run: echo $env:DOCKER_PASSWORD | docker login "$($env:DOCKER_REGISTRY)" --username "$($env:DOCKER_USERNAME)" --password-stdin
       shell: pwsh
     - name: 'Dotnet Cake DockerBuild'
       run: dotnet cake --target=DockerBuild --tag=${{secrets.DOCKER_USERNAME}}/fastestapi --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
