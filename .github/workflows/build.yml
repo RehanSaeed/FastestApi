@@ -19,17 +19,6 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # Set the build number in MinVer.
   MINVERBUILDMETADATA: build.${{github.run_number}}
-#if (Docker)
-  DOCKER_IMAGE_NAME: apitemplate
-  # GitHub Container Registry
-  DOCKER_REGISTRY: ghcr.io
-  DOCKER_USERNAME: ${{github.actor}}
-  DOCKER_PASSWORD: ${{secrets.GITHUB_TOKEN}}
-  # Docker Hub
-  # DOCKER_REGISTRY: registry.hub.docker.com
-  # DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-  # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-#endif
 
 jobs:
   build:
@@ -63,9 +52,20 @@ jobs:
       with:
         name: ${{matrix.os}}
         path: './Artefacts'
+#if (Docker)
 
   docker:
     name: Docker-${{matrix.os}}
+    env:
+      DOCKER_IMAGE_NAME: apitemplate
+      # GitHub Container Registry
+      DOCKER_REGISTRY: ghcr.io
+      DOCKER_USERNAME: ${{github.actor}}
+      DOCKER_PASSWORD: ${{secrets.GITHUB_TOKEN}}
+      # Docker Hub
+      # DOCKER_REGISTRY: registry.hub.docker.com
+      # DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
     environment:
       name: 'GitHub Container Registry'
       url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/DOCKER_IMAGE_NAME
@@ -76,6 +76,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
+    - run: echo ${{env.DOCKER_TAG}}
+      shell: pwsh
     - name: 'Checkout'
       uses: actions/checkout@v2.3.4
       with:
@@ -100,3 +102,4 @@ jobs:
     - name: 'Dotnet Cake DockerBuild'
       run: dotnet cake --target=DockerBuild --tag=${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}} --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
+#endif
