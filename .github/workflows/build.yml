@@ -60,7 +60,7 @@ jobs:
       DOCKER_IMAGE_NAME: apitemplate
       # GitHub Container Registry
       DOCKER_REGISTRY: ghcr.io
-      DOCKER_USERNAME: ${{github.actor}}
+      DOCKER_USERNAME: rehansaeed
       DOCKER_PASSWORD: ${{secrets.GITHUB_TOKEN}}
       # Docker Hub
       # DOCKER_REGISTRY: registry.hub.docker.com
