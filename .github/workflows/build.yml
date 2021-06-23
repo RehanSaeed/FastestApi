@@ -1,14 +1,14 @@
 name: Build
 
 on:
-  schedule:
-    - cron: '0 5 * * *'
   push:
-    branches: main
+    branches:
+      - main
   pull_request:
   release:
     types:
       - published
+  workflow_dispatch:
 
 env:
   # Disable the .NET logo in the console output.
@@ -19,15 +19,16 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # Set the build number in MinVer.
   MINVERBUILDMETADATA: build.${{github.run_number}}
-  
+
   DOCKER_IMAGE_NAME: fastestapi
-  
-  DOCKER_HUB_USERNAME: ${{secrets.DOCKER_USERNAME}}
-  DOCKER_HUB_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-  
-  DOCKER_GITHUB_REGISTRY: ghcr.io
-  DOCKER_GITHUB_USERNAME: ${{ github.actor }}
-  DOCKER_GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  # GitHub Container Registry
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_USERNAME: ${{ github.actor }}
+  DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  # Docker Hub
+  # DOCKER_REGISTRY: registry.hub.docker.com
+  # DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+  # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
 
 jobs:
   build:
@@ -38,15 +39,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
     - name: 'Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
       with:
         lfs: true
         fetch-depth: 0
-    - name: 'Git Fetch Tags'
-      run: git fetch --tags
-      shell: pwsh
     - name: 'Install .NET Core SDK'
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v1.8.0
     - name: 'Dotnet Tool Restore'
       run: dotnet tool restore
       shell: pwsh
@@ -60,28 +58,28 @@ jobs:
       run: dotnet cake --target=Publish
       shell: pwsh
     - name: 'Publish Artefacts'
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: ${{matrix.os}}
         path: './Artefacts'
 
   docker:
     name: Docker-${{matrix.os}}
+    environment:
+      name: 'Docker Hub'
+      url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/apitemplate
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
         os: [ubuntu-latest]
     steps:
     - name: 'Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
       with:
         lfs: true
         fetch-depth: 0
-    - name: 'Git Fetch Tags'
-      run: git fetch --tags
-      shell: pwsh
     - name: 'Install .NET Core SDK'
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v1.8.0
     - name: 'Dotnet Tool Restore'
       run: dotnet tool restore
       shell: pwsh
@@ -92,20 +90,10 @@ jobs:
       run: echo ${{steps.qemu.outputs.platforms}}
     - name: 'Install Docker BuildX'
       uses: docker/setup-buildx-action@v1
-    - name: 'Docker Hub Login'
+    - name: 'Docker Login'
       if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      run: echo ${{env.DOCKER_HUB_PASSWORD}} | docker login --username ${{env.DOCKER_HUB_USERNAME}} --password-stdin
-      shell: pwsh
-    - name: 'GitHub Container Registry Login '
-      if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      run: echo ${{env.DOCKER_GITHUB_PASSWORD}} | docker login ${{env.DOCKER_GITHUB_REGISTRY}} --username ${{env.DOCKER_GITHUB_USERNAME}} --password-stdin
+      run: echo ${{env.DOCKER_PASSWORD}} | docker login ${{env.DOCKER_REGISTRY}} --username ${{env.DOCKER_USERNAME}} --password-stdin
       shell: pwsh
     - name: 'Dotnet Cake DockerBuild'
-      env:
-        DOCKER_HUB_TAG: ${{env.DOCKER_HUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}
-        GITHUB_TAG: ghcr.io/${{ env.IMAGE_NAME }}
-      run: dotnet cake --target=DockerBuild --tag="${{env.DOCKER_HUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}" --tag="${{env.DOCKER_GITHUB_REGISTRY}}/${{env.DOCKER_GITHUB_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}" --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
+      run: dotnet cake --target=DockerBuild --tag=${{env.DOCKER_REGISTRY}}/${{env.DOCKER_USERNAME}}/${{env.DOCKER_IMAGE_NAME}} --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
-    #- name: 'Scan'
-    #  run: docker scan nginx:latest
-    #  shell: pwsh
