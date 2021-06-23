@@ -60,7 +60,7 @@ jobs:
       DOCKER_IMAGE_NAME: apitemplate
       # GitHub Container Registry
       DOCKER_REGISTRY: ghcr.io
-      DOCKER_USERNAME: ${{github.actor}}
+      DOCKER_USERNAME: rehansaeed
       DOCKER_PASSWORD: ${{secrets.GITHUB_TOKEN}}
       # Docker Hub
       # DOCKER_REGISTRY: registry.hub.docker.com
@@ -68,7 +68,7 @@ jobs:
       # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
     environment:
       name: 'GitHub Container Registry'
-      url: https://hub.docker.com/repository/docker/DOCKER_USERNAME/DOCKER_IMAGE_NAME
+      url: https://github.com/RehanSaeed/FastestApi/pkgs/container/apitemplate
     permissions:
       packages: write
     runs-on: ${{matrix.os}}
@@ -98,6 +98,6 @@ jobs:
       run: echo ${{env.DOCKER_PASSWORD}} | docker login ${{env.DOCKER_REGISTRY}} --username ${{env.DOCKER_USERNAME}} --password-stdin
       shell: pwsh
     - name: 'Dotnet Cake DockerBuild'
-      run: dotnet cake --target=DockerBuild --tag="${{env.DOCKER_REGISTRY}}/${{env.DOCKER_USERNAME}}/${{env.DOCKER_IMAGE_NAME}}".ToLower() --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
+      run: dotnet cake --target=DockerBuild --tag=${{env.DOCKER_REGISTRY}}/${{env.DOCKER_USERNAME}}/${{env.DOCKER_IMAGE_NAME}} --push=${{github.ref == 'refs/heads/main' || github.event_name == 'release'}}
       shell: pwsh
 #endif
