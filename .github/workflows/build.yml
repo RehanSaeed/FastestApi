@@ -86,6 +86,11 @@ jobs:
     - name: 'Dotnet Tool Restore'
       run: dotnet tool restore
       shell: pwsh
+    
+    - name: 'Docker Scan'
+      run: docker scan hello-world
+      shell: pwsh
+    
     - name: 'Install QEMU'
       id: qemu
       uses: docker/setup-qemu-action@v1
